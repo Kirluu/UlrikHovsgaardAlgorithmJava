@@ -14,19 +14,32 @@ import org.deckfour.xes.model.XLog;
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 // Run as console application, otherwise to be used as inspiration on how to use the miner, etc.
 public class FrontEnd {
-
     public static void main(String[] args) {
+        doMainLogic(args);
 
-        // TODO: Make smart-ish console front-end
-
+        // Wait for user to manually exit (allow user to read/copy output)
+        new Scanner(System.in).nextLine();
     }
 
-    public static Log ParseLog(String pathToFile) throws Exception {
-        return Log.parseLog(pathToFile);
+    private static void doMainLogic(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Please supply a path to a log-file as a single argument.");
+            return;
+        }
+
+        // Parse log:
+        Log log;
+        try { log = Log.parseLog(args[0]); }
+        catch (Exception e) { System.out.println(String.format("Failed to parse the file \"%s\". Exception as follows:\n%s", args[0], e)); return; }
+
+        // Mine log:
+        try { System.out.println(RunMiner(log)); }
+        catch (Exception e) { System.out.println(String.format("Failed to mine the log. Exception as follows:\n%s", e)); return; }
     }
 
     public static String RunMiner(Log log) {
@@ -38,7 +51,7 @@ public class FrontEnd {
         return DcrGraphExporter.ExportToXml(miner.getMinedGraph());
     }
 
-    public static String MineGraph(String pathToLogFile, double constraintViolationThreshold, int nestedGraphMinimumSize) {
+    public static String MineGraph(String pathToLogFile, double constraintViolationThreshold) {
         Threshold.setValue(constraintViolationThreshold);
 
         Log log = Log.parseLog(pathToLogFile);
