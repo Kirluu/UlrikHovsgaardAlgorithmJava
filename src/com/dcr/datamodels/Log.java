@@ -1,5 +1,10 @@
 package com.dcr.datamodels;
 
+import org.deckfour.xes.factory.XFactory;
+import org.deckfour.xes.factory.XFactoryRegistry;
+import org.deckfour.xes.in.XMxmlParser;
+import org.deckfour.xes.in.XParser;
+import org.deckfour.xes.in.XParserRegistry;
 import org.deckfour.xes.in.XesXmlParser;
 import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
@@ -69,16 +74,54 @@ public class Log {
         return newLog;
     }
 
-    public static Log parseLog(String pathToFile) {
-        //return OpenXESParser.ParseXesToOurLog(pathToFile); // TODO: Import OpenXES library for parsing logs? Otherwise put whatever tools ProM desires
-        XesXmlParser bla = new XesXmlParser();
+    public static XLog parseXESLog(String filename) {
         try {
-            List<XLog> xLogs = bla.parse(new File(pathToFile));
+            File sourceFile = new File(filename);
+            for (XParser parser : XParserRegistry.instance().getAvailable()) {
+                if (parser.canParse(sourceFile)) {
+                    System.out.println("Using input parser: " + parser.name());
+                    List<XLog> logs = parser.parse(sourceFile);
+
+                    if (!logs.isEmpty())
+                        return logs.get(0);
+
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static XLog parseXESLogFirst(String filename) {
+        try {
+            XFactory factory = XFactoryRegistry.instance().currentDefault();
+            XParser parser;
+            if (filename.toLowerCase().endsWith(".xes") || filename.toLowerCase().endsWith(".xez")
+                    || filename.toLowerCase().endsWith(".xes.gz")) {
+                parser = new XesXmlParser(factory);
+            } else {
+                parser = new XMxmlParser(factory);
+            }
+            List<XLog> xLogs = parser.parse(new File(filename));
             if (xLogs == null || xLogs.isEmpty())
                 return null;
 
-            XLog xLog = xLogs.get(0); // Assume first one is the log we want, if multiple
+            return xLogs.get(0); // Assume first one is the log we want, if multiple
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
+    public static Log parseLog(String pathToFile) {
+        XLog xLog = parseXESLog(pathToFile);
+        if (xLog == null) {
+            return null;
+        }
+        try {
             Log log = new Log();
             // Add traces
             for (XTrace xTrace : xLog) {
