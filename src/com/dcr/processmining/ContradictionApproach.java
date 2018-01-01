@@ -93,7 +93,8 @@ public class ContradictionApproach {
         {
             Activity lastActivity = Graph.getActivity(_last.getId());
             boolean firstViolation = true;
-            Activity[] runArr = (Activity[])_run.toArray();
+            Object[] runObjArr = _run.toArray();
+            Activity[] runArr = Arrays.copyOf(runObjArr, runObjArr.length, Activity[].class);
 
             //traversing run : reverse order, cause stack
             for (int i = runArr.length - 2; i > 0; i--)

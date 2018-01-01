@@ -34,19 +34,21 @@ public class FrontEnd {
 
         // Parse log:
         Log log;
-        try { log = Log.parseLog(args[0]); }
-        catch (Exception e) { System.out.println(String.format("Failed to parse the file \"%s\". Exception as follows:\n%s", args[0], e)); return; }
+        try { log = Log.parseLog("D:\\Downloads\\Firefox Downloads\\SepsisCaseLog.xes"); }
+        catch (Exception e) { System.out.println(String.format("Failed to parse the file \"%s\". Exception as follows:", args[0])); e.printStackTrace(); return; }
 
         // Mine log:
         try { System.out.println(RunMiner(log)); }
-        catch (Exception e) { System.out.println(String.format("Failed to mine the log. Exception as follows:\n%s", e)); return; }
+        catch (Exception e) { System.out.println(String.format("Failed to mine the log. Exception as follows:")); e.printStackTrace(); return; }
     }
 
     public static String RunMiner(Log log) {
+        List<Activity> activities = log.getAlphabet().stream()
+                .map(ev -> new Activity(ev.getIdOfActivity()))
+                .collect(Collectors.toList());
+
         ContradictionApproach miner = new ContradictionApproach(
-                new HashSet<>(log.getAlphabet().stream()
-                        .map(ev -> new Activity(ev.EventId))
-                        .collect(Collectors.toList())));
+                new HashSet<>(activities));
         miner.addLog(log);
         return DcrGraphExporter.ExportToXml(miner.getMinedGraph());
     }

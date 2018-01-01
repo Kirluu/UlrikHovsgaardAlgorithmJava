@@ -6,6 +6,7 @@ import org.deckfour.xes.in.XMxmlParser;
 import org.deckfour.xes.in.XParser;
 import org.deckfour.xes.in.XParserRegistry;
 import org.deckfour.xes.in.XesXmlParser;
+import org.deckfour.xes.model.XAttributeMap;
 import org.deckfour.xes.model.XEvent;
 import org.deckfour.xes.model.XLog;
 import org.deckfour.xes.model.XTrace;
@@ -104,6 +105,7 @@ public class Log {
             } else {
                 parser = new XMxmlParser(factory);
             }
+            System.out.println("Using input parser: " + parser.name());
             List<XLog> xLogs = parser.parse(new File(filename));
             if (xLogs == null || xLogs.isEmpty())
                 return null;
@@ -129,7 +131,7 @@ public class Log {
                 trace.setId(UUID.randomUUID().toString()); // Give globally unique ID
                 // Add events
                 for (XEvent xEvent : xTrace) {
-                    String idAndName = xEvent.getID().toString();
+                    String idAndName = xEvent.getAttributes().get("concept:name").toString();
                     trace.Add(new LogEvent(idAndName, idAndName));
                 }
                 log.AddTrace(trace);
