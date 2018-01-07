@@ -462,7 +462,7 @@ public class DcrGraph {
     }
 
     // ASSUMPTION: If any difference in activity-set-size, then comparisonGraph has more activities than inputGraph!
-    public static Byte[] HashDcrGraph(DcrGraph graph, ByteDcrGraph comparisonGraph)
+    public static List<Byte> HashDcrGraph(DcrGraph graph, ByteDcrGraph comparisonGraph)
     {
         if (comparisonGraph != null)
         {
@@ -470,14 +470,14 @@ public class DcrGraph {
         }
         else
         {
-            Byte[] array = new Byte[graph.getActivities().size()];
+            List<Byte> lst = new ArrayList<Byte>(graph.getActivities().size());
             int i = 0;
             HashSet<Activity> runnableActivities = graph.GetRunnableActivities();
             for (Activity act : graph.getActivitiesSortedById())
             {
-                array[i++] = act.getHashedActivity(runnableActivities.contains(act));
+                lst.set(i++, act.getHashedActivity(runnableActivities.contains(act)));
             }
-            return array;
+            return lst;
         }
     }
 

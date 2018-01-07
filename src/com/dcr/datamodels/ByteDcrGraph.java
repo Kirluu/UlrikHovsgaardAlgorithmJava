@@ -14,10 +14,13 @@ import static com.dcr.utils.Utility.CloneByteArray;
 public class ByteDcrGraph
 {
     private HashMap<Integer, String> IndexToActivityId = new HashMap<>();
-    private HashMap<String, Integer> ActivityIdToIndex = new HashMap<>();
+    public HashMap<Integer, String> getIndexToActivityId() { return IndexToActivityId; }
 
-    private Byte[] State;
-    public Byte[] getState() { return State; }
+    private HashMap<String, Integer> ActivityIdToIndex = new HashMap<>();
+    public HashMap<String, Integer> getActivityIdToIndex() { return ActivityIdToIndex; }
+
+    private List<Byte> State;
+    public List<Byte> getState() { return State; }
 
     private HashMap<Integer, HashSet<Integer>> Includes = new HashMap<>();
     private HashMap<Integer, HashSet<Integer>> Excludes = new HashMap<>();
@@ -142,7 +145,7 @@ public class ByteDcrGraph
         int index = ActivityIdToIndex.get(id);
 
         // Exclude the activity
-        State[index] = 0;
+        State.set(index, (byte)0);
         // Ensure activity can never be included (removing it as an include-target from all activities)
         Includes = new HashMap<>(Includes.entrySet().stream()
                 .map(x -> new AbstractMap.SimpleEntry<>(
@@ -179,9 +182,9 @@ public class ByteDcrGraph
     public List<Integer> GetRunnableIndexes()
     {
         List<Integer> resList = new ArrayList<>();
-        for (int i = 0; i < State.length; i++)
+        for (int i = 0; i < State.size(); i++)
         {
-            if (CanByteRun(State[i]))
+            if (CanByteRun(State.get(i)))
             {
                 resList.add(i);
             }
@@ -189,22 +192,12 @@ public class ByteDcrGraph
         return resList;
     }
 
-    public static Byte[] StateWithExcludedActivitiesEqual(Byte[] b)
-    {
-        Byte[] retB = new Byte[b.length];
-        for (int i = 0; i < b.length; i++)
-        {
-            retB[i] = (Byte) (IsByteIncluded(b[i]) ? b[i] : 0);
-        }
-        return retB;
-    }
-
     private boolean ActivityCanRun(int idx)
     {
-        if (!IsByteIncluded(State[idx])) return false;
+        if (!IsByteIncluded(State.get(idx))) return false;
         if (ConditionsReversed.containsKey(idx))
         {
-            return ConditionsReversed.get(idx).stream().allMatch(source -> IsByteExcludedOrExecuted(State[source]));
+            return ConditionsReversed.get(idx).stream().allMatch(source -> IsByteExcludedOrExecuted(State.get(source)));
         }
         return true;
     }
@@ -216,11 +209,11 @@ public class ByteDcrGraph
     public void ExecuteActivity(int idx)
     {
         // Executed = true
-        int execInt = (State[idx]) | (1 << 2);
-        State[idx] = (byte)execInt;                                         // TODO: Does this work in runtime?
+        int execInt = (State.get(idx)) | (1 << 2);
+        State.set(idx, (byte)execInt);                                         // TODO: Does this work in runtime?
         // Pending = false
-        int pendingInt = ((State[idx]) & (1 ^ Byte.MAX_VALUE));
-        State[idx] = (byte)pendingInt;                                      // TODO: Does this work in runtime?
+        int pendingInt = ((State.get(idx)) & (1 ^ Byte.MAX_VALUE));
+        State.set(idx, (byte)pendingInt);                                      // TODO: Does this work in runtime?
 
         // Execute Includes, Excludes, Responses
         if (Includes.containsKey(idx))
@@ -245,7 +238,7 @@ public class ByteDcrGraph
             }
         }
 
-        for (int i = 0; i < State.length; i++)
+        for (int i = 0; i < State.size(); i++)
         {
             if (ActivityCanRun(i))
             {
@@ -263,41 +256,41 @@ public class ByteDcrGraph
         if (include)
         {
             // Included = true
-            int includedInt = ((State[idx]) | (1 << 1));
-            State[idx] = (byte)includedInt;                                      // TODO: Does this work in runtime?
+            int includedInt = ((State.get(idx)) | (1 << 1));
+            State.set(idx, (byte)includedInt);                                      // TODO: Does this work in runtime?
         }
         else
         {
             // Included = false
-            int includedInt = ((State[idx]) & ((1 << 1) ^ Byte.MAX_VALUE));
-            State[idx] = (byte)includedInt;                                      // TODO: Does this work in runtime?
+            int includedInt = ((State.get(idx)) & ((1 << 1) ^ Byte.MAX_VALUE));
+            State.set(idx, (byte)includedInt);                                      // TODO: Does this work in runtime?
 
         }
     }
 
-    public static boolean IsFinalState(Byte[] state) // OK
+    public static boolean IsFinalState(List<Byte> state) // OK
     {
         // Must not be any activity which is both Pending and Included
-        return Arrays.stream(state).noneMatch(t -> IsByteIncluded(t) && IsBytePending(t));
+        return state.stream().noneMatch(t -> IsByteIncluded(t) && IsBytePending(t));
     }
 
     private void SetActivityPending(int idx) // OK
     {
         // Pending = true
-        int pendingInt = ((State[idx]) | 1);
-        State[idx] = (byte)pendingInt;
+        int pendingInt = ((State.get(idx)) | 1);
+        State.set(idx, (byte)pendingInt);
     }
 
     private void SetActivityRunnable(int idx)
     {
-        int runnableInt = ((State[idx]) | (1 << 3));
-        State[idx] = (byte)runnableInt;
+        int runnableInt = ((State.get(idx)) | (1 << 3));
+        State.set(idx, (byte)runnableInt);
     }
 
     private void SetActivityNotRunnable(int idx)
     {
-        int notRunnableInt = ((State[idx]) & ((1 << 3) ^ Byte.MAX_VALUE));
-        State[idx] = (byte)notRunnableInt;
+        int notRunnableInt = ((State.get(idx)) & ((1 << 3) ^ Byte.MAX_VALUE));
+        State.set(idx, (byte)notRunnableInt);
     }
 
     public static boolean IsByteIncluded(Byte b)
@@ -326,4 +319,13 @@ public class ByteDcrGraph
         return (b & (1 << 1)) <= 0 || (b & 1) <= 0;
     }
 
+    public static List<Byte> StateWithExcludedActivitiesEqual(List<Byte> b)
+    {
+        List<Byte> retB = new ArrayList<Byte>(b.size());
+        for (int i = 0; i < b.size(); i++)
+        {
+            retB.set(i, IsByteIncluded(b.get(i)) ? b.get(i) : 0);
+        }
+        return retB;
+    }
 }
