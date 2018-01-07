@@ -1,176 +1,130 @@
 package com.dcr.redundancyremoval;
 
-import com.dcr.datamodels.Activity;
-import com.dcr.datamodels.ByteDcrGraph;
-import com.dcr.datamodels.DcrGraph;
+import com.dcr.datamodels.*;
 import com.dcr.traversal.UniqueTraceFinder;
+import com.sun.istack.internal.Nullable;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class RedundancyRemover {
-    public event Action<string> ReportProgress;
-
+    // public event Action<string> ReportProgress; // TODO: Java event listeners...
 
     private UniqueTraceFinder _uniqueTraceFinder;
     private DcrGraph _originalInputDcrGraph;
-    private BackgroundWorker _worker;
 
-    public DcrGraph OutputDcrGraph { get; private set; }
+    private DcrGraph OutputDcrGraph;
+    public DcrGraph getOutputDcrGraph() { return OutputDcrGraph; }
 
-    public int RedundantRelationsFound { get; set; }
+    private int RedundantRelationsFound;
+    public int getRedundantRelationsFound() { return RedundantRelationsFound; }
 
-        public List<(Activity, Activity)> IncludesRemoved { get; set; }
-        public List<(Activity, Activity)> ExcludesRemoved { get; set; }
-        public List<(Activity, Activity)> ResponsesRemoved { get; set; }
-        public List<(Activity, Activity)> ConditionsRemoved { get; set; }
+    public List<Relation> IncludesRemoved = new ArrayList<>();
+    public List<Relation> ExcludesRemoved = new ArrayList<>();
+    public List<Relation> ResponsesRemoved = new ArrayList<>();
+    public List<Relation> ConditionsRemoved = new ArrayList<>();
 
-    public int RedundantActivitiesFound { get; set; }
+    private int RedundantActivitiesFound;
+    public int getRedundantActivitiesFound() { return RedundantActivitiesFound; }
 
-
-    public DcrGraph RemoveRedundancy(DcrGraph inputGraph, BackgroundWorker worker = null)
-    {
-        var (graph, _) = RemoveRedundancyInner(inputGraph, null, worker);
+    public DcrGraph RemoveRedundancy(DcrGraph inputGraph) throws Exception {
+        DcrGraph graph = RemoveRedundancyInner(inputGraph, null);
         return graph;
     }
 
-    public (DcrGraph, HashSet<Relation>) RemoveRedundancyInner(DcrGraph inputGraph, ByteDcrGraph byteDcrFormat = null, BackgroundWorker worker = null, DcrGraphSimple comparisonGraph = null)
-    {
+    public DcrGraph RemoveRedundancyInner(DcrGraph inputGraph, ByteDcrGraph byteDcrFormat) throws Exception {
         RedundantRelationsFound = 0;
         RedundantActivitiesFound = 0;
 
-        _worker = worker;
+        //TODO efficiency: use an algorithm to check if the graph is connected and if not then recursively remove redundancy on the subgraphs.
+        DcrGraph copy = inputGraph.Copy();
 
-        //TODO: use an algorithm to check if the graph is connected and if not then recursively remove redundancy on the subgraphs.
-        var copy = inputGraph.Copy();
-
-        // Temporarily remove flower activities.
-        //var flowerActivities =
-        //    copy.GetActivities().Where(x => x.Included && !copy.ActivityHasRelations(x)).ToList();
-
-        //foreach (var a in flowerActivities)
-        //{
-        //    copy.RemoveActivity(a.Id);
-        //}
-
-        var byteDcrGraph = new ByteDcrGraph(copy, byteDcrFormat);
+        ByteDcrGraph byteDcrGraph = new ByteDcrGraph(copy, byteDcrFormat);
 
         _uniqueTraceFinder = new UniqueTraceFinder(byteDcrGraph);
 
         _originalInputDcrGraph = copy.Copy();
         OutputDcrGraph = copy;
 
+        // Try to remove entire activities at a time and see if the unique traces acquired are the same as the original:
+        for (Activity activity : OutputDcrGraph.getActivities()) {
+            ByteDcrGraph graphCopy = byteDcrGraph.Copy();
 
-        // Remove relations and see if the unique traces acquired are the same as the original. If so, the relation is clearly redundant and is removed immediately
-        // All the following calls potentially alter the OutputDcrGraph
+            graphCopy.RemoveActivity(activity.getId());
 
-        var res = RemoveRedundantRelations(RelationType.Response, byteDcrFormat, comparisonGraph);
-
-        res.UnionWith(RemoveRedundantRelations(RelationType.Condition, byteDcrFormat, comparisonGraph));
-
-        // Handles inclusions + exclusions
-        res.UnionWith(RemoveRedundantRelations(RelationType.Inclusion, byteDcrFormat, comparisonGraph));
-
-        res.UnionWith(RemoveRedundantRelations(RelationType.Milestone, byteDcrFormat, comparisonGraph));
-
-
-
-        foreach (var activity in OutputDcrGraph.GetActivities())
-        {
-            var graphCopy = byteDcrGraph.Copy();
-
-            graphCopy.RemoveActivity(activity.Id);
-
-            ReportProgress?.Invoke("Removing Activity " + activity.Id);
+            //ReportProgress?.Invoke("Removing Activity " + activity.Id); // Java event todo...
 
             // Compare unique traces - if equal activity is redundant
             if (_uniqueTraceFinder.CompareTraces(graphCopy))
             {
                 // The activity is redundant: Remove it from Output graph (also removing all involved relations (thus also redundant))
-                RedundantRelationsFound += OutputDcrGraph.RemoveActivity(activity.Id);
+                RedundantRelationsFound += OutputDcrGraph.RemoveActivity(activity.getId());
 
                 RedundantActivitiesFound++;
             }
         }
 
+        // Remove relations and see if the unique traces acquired are the same as the original. If so, the relation is clearly redundant and is removed immediately
+        // All the following calls can alter the "OutputDcrGraph"
+        HashSet<Relation> res = RemoveRedundantRelations(RelationType.Response, byteDcrFormat);
 
-        //foreach (var a in flowerActivities)
-        //{
-        //    OutputDcrGraph.AddActivity(a.Id, a.Name);
-        //    OutputDcrGraph.SetIncluded(a.Included, a.Id);
-        //    OutputDcrGraph.SetPending(a.Pending, a.Id);
-        //}
-        //var nested = DcrGraphExporter.ExportToXml(OutputDcrGraph);
+        res.addAll(RemoveRedundantRelations(RelationType.Condition, byteDcrFormat));
 
+        res.addAll(RemoveRedundantRelations(RelationType.Inclusion, byteDcrFormat)); // Handles inclusions + exclusions
 
-        return (OutputDcrGraph, res);
+        
+        return OutputDcrGraph;
     }
 
-    private HashSet<Relation> RemoveRedundantRelations(RelationType relationType, ByteDcrGraph byteDcrFormat, DcrGraphSimple comparisonGraph = null)
+    private HashSet<Relation> RemoveRedundantRelations(RelationType relationType, ByteDcrGraph byteDcrFormat)
     {
-        var relationsNotDiscovered = new HashSet<Relation>();
+        HashSet<Relation> relationsNotDiscovered = new HashSet<>();
         // Determine method input
-        Dictionary<Activity, HashSet<Activity>> relationDictionary = new Dictionary<Activity, HashSet<Activity>>();
+        HashMap<Activity, HashSet<Activity>> relationHashMap = new HashMap<>();
         switch (relationType)
         {
-            case RelationType.Response:
-                relationDictionary = _originalInputDcrGraph.Responses.ToDictionary(a => a.Key, b => DcrGraph.FilterDictionaryByThreshold(b.Value));
+            case Response:
+                relationHashMap = new HashMap<>(_originalInputDcrGraph.getResponses().entrySet().stream()
+                        .map(a -> new AbstractMap.SimpleEntry<>(a.getKey(), DcrGraph.FilterHashMapByThreshold(a.getValue())))
+                        .collect(Collectors.toMap(x -> x.getKey(), x -> x.getValue())));
+            break;
+            case Condition:
+                relationHashMap = new HashMap<>(_originalInputDcrGraph.getConditions().entrySet().stream()
+                        .map(a -> new AbstractMap.SimpleEntry<>(a.getKey(), DcrGraph.FilterHashMapByThreshold(a.getValue())))
+                        .collect(Collectors.toMap(x -> x.getKey(), x -> x.getValue())));
                 break;
-            case RelationType.Condition:
-                relationDictionary = _originalInputDcrGraph.Conditions.ToDictionary(a => a.Key, b => DcrGraph.FilterDictionaryByThreshold(b.Value));
-                break;
-            case RelationType.Milestone:
-                relationDictionary = _originalInputDcrGraph.Milestones.ToDictionary(a => a.Key, b => DcrGraph.FilterDictionaryByThreshold(b.Value));
-                break;
-            case RelationType.Inclusion:
-            case RelationType.Exclusion:
-                // Convert Dictionary<Activity, Dictionary<Activity, bool>> to Dictionary<Activity, HashSet<Activity>>
-                relationDictionary = DcrGraph.ConvertToDictionaryActivityHashSetActivity(_originalInputDcrGraph.IncludeExcludes); // No thresholding to check - either Exclusion or Inclusion
+            case Inclusion:
+            case Exclusion:
+                // Convert HashMap<Activity, HashMap<Activity, Confidence>> to HashMap<Activity, HashSet<Activity>> without removing anything
+                relationHashMap = DcrGraph.ConvertToHashMapActivityHashSetActivity(_originalInputDcrGraph.getIncludeExcludes()); // No thresholding to check - either Exclusion or Inclusion
                 break;
         }
 
 
         // Remove relations and see if the unique traces acquired are the same as the original. If so, the relation is clearly redundant
-        foreach (var relation in relationDictionary)
-        {
-            var source = relation.Key;
+        for (Map.Entry<Activity, HashSet<Activity>> relation : relationHashMap.entrySet()) {
+            Activity source = relation.getKey();
 
-            foreach (var target in relation.Value)
-            {
-#if DEBUG
-                //Console.WriteLine("Removing " + relationType + " from " + source.Id + " to " + target.Id + ":");
-#endif
-                ReportProgress?.Invoke("Removing " + relationType + " from " + source.Id + " to " + target.Id);
+            for (Activity target : relation.getValue()) {
+                //ReportProgress?.Invoke("Removing " + relationType + " from " + source.Id + " to " + target.Id); // Java events todo...
 
-                var copy = OutputDcrGraph.Copy(); // "Running copy"
-                var copyTarget = copy.GetActivity(target.Id);
+                DcrGraph copy = OutputDcrGraph.Copy(); // "Running copy"
+                Activity copyTarget = copy.getActivity(target.getId());
 
-                bool? isInclude = null;
+                Boolean isInclude = null;
 
                 // Attempt to remove the relation
-                switch (relationType)
-                {
-                    case RelationType.Response:
-                        copy.Responses[copy.GetActivity(source.Id)].Remove(copyTarget);
+                switch (relationType) {
+                    case Response:
+                        copy.getResponses().get(copy.getActivity(source.getId())).remove(copyTarget);
                         break;
-                    case RelationType.Condition:
-                        copy.Conditions[copy.GetActivity(source.Id)].Remove(copyTarget);
+                    case Condition:
+                        copy.getConditions().get(copy.getActivity(source.getId())).remove(copyTarget);
                         break;
-                    case RelationType.Milestone:
-                        copy.Milestones[copy.GetActivity(source.Id)].Remove(copyTarget);
-                        break;
-                    case RelationType.Inclusion:
-                    case RelationType.Exclusion:
-                        // TODO: This check and continue gave an incorrect count of redundant relations found
-                        //if (source.Id == target.Id) // Assume self-exclude @ equal IDs (Assumption that relation-addition METHODS in DcrGraph have been used to add relations)
-                        //{
-                        //    continue; // ASSUMPTION: A self-exclude on an activity that is included at some point is never redundant
-                        //    // Recall: All never-included activities have already been removed from graph
-                        //}
-
-                        isInclude = copy.IncludeExcludes[copy.GetActivity(source.Id)][copyTarget].IsAboveThreshold();
-                        if (source.Id == "Appraisal audit" && target.Id == "Make appraisal appointment")
-                        {
-                            int i = 0;
-                        }
-                        copy.IncludeExcludes[copy.GetActivity(source.Id)].Remove(copyTarget);
+                    case Inclusion:
+                    case Exclusion:
+                        isInclude = copy.getIncludeExcludes().get(copy.getActivity(source.getId())).get(copyTarget).isAboveThreshold();
+                        copy.getIncludeExcludes().get(copy.getActivity(source.getId())).remove(copyTarget);
                         break;
                 }
 
@@ -180,16 +134,20 @@ public class RedundancyRemover {
                     // The relation is redundant, replace running copy with current copy (with the relation removed)
                     OutputDcrGraph = copy;
 
-                    // Print about detected relation if not in 'comparisonGraph'
-                    if (comparisonGraph != null &&
-                            RelationInSimpleDcrGraph(relationType, source, target, comparisonGraph))
-                    {
-                        var relationString = isInclude != null ? (isInclude == true ? "Include" : "Exclude") : relationType.ToString();
-
-                        relationsNotDiscovered.Add(new Relation(relationString, source, target));
-                        //Console.WriteLine(
-                        //  $"{relationString} from {source.ToDcrFormatString(false)} " +
-                        //$"to {target.ToDcrFormatString(false)} is redundant, but not in comparison-graph!");
+                    // Report finding:
+                    switch (relationType) {
+                        case Response:
+                            ResponsesRemoved.add(new Relation(RelationType.Response, source, copyTarget));
+                            break;
+                        case Condition:
+                            ConditionsRemoved.add(new Relation(RelationType.Condition, source, copyTarget));
+                            break;
+                        case Inclusion:
+                        case Exclusion:
+                            if (isInclude == null) break;
+                            if (isInclude) { IncludesRemoved.add(new Relation(RelationType.Inclusion, source, copyTarget)); }
+                            else { ExcludesRemoved.add(new Relation(RelationType.Exclusion, source, copyTarget)); }
+                            break;
                     }
 
                     RedundantRelationsFound++;
@@ -197,53 +155,5 @@ public class RedundancyRemover {
             }
         }
         return relationsNotDiscovered;
-    }
-
-    private bool RelationInSimpleDcrGraph(RelationType type, Activity source, Activity target, DcrGraphSimple comparisonGraph)
-    {
-        switch (type)
-        {
-            case RelationType.Response:
-                return comparisonGraph.Responses.Any(x => x.Key.Id == source.Id && x.Value.Any(y => y.Id == target.Id));
-
-            case RelationType.Condition:
-                return comparisonGraph.Conditions.Any(x => x.Key.Id == source.Id && x.Value.Any(y => y.Id == target.Id));
-
-            //case RelationType.Milestone:
-            //    return comparisonGraph.Milestones.Any(x => x.Key.Id == source.Id && x.Value.Any(y => y.Id == target.Id));
-
-            case RelationType.Inclusion:
-            case RelationType.Exclusion:
-                return comparisonGraph.Includes.Any(x => x.Key.Id == source.Id && x.Value.Any(y => y.Id == target.Id))
-                        || comparisonGraph.Excludes.Any(x => x.Key.Id == source.Id && x.Value.Any(y => y.Id == target.Id));
-
-            default:
-                return true;
-        }
-    }
-
-    private bool CompareTraceSet(HashSet<List<int>> me, HashSet<List<int>> you)
-    {
-        if (me.Count != you.Count)
-        {
-            return false;
-        }
-
-        foreach (var list in me)
-        {
-            you.RemoveWhere(l => CompareTraces(l, list));
-        }
-
-        return !you.Any();
-    }
-
-    private bool CompareTraces(List<int> me, List<int> you)
-    {
-        if (me.Count != you.Count)
-        {
-            return false;
-        }
-
-        return !me.Where((t, i) => t != you[i]).Any();
     }
 }

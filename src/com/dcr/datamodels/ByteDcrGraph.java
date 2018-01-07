@@ -324,7 +324,7 @@ public class ByteDcrGraph
         List<Byte> retB = new ArrayList<Byte>(b.size());
         for (int i = 0; i < b.size(); i++)
         {
-            retB.set(i, IsByteIncluded(b.get(i)) ? b.get(i) : 0);
+            retB.set(i, (byte)(IsByteIncluded(b.get(i)) ? b.get(i) : 0));
         }
         return retB;
     }

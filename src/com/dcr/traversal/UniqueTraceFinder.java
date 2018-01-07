@@ -112,7 +112,7 @@ public class UniqueTraceFinder {
             }
 
             // If we have not seen the state before (successfully ADD it to the state)
-            if (_seenStates.add(Arrays.asList(inputGraphCopy.getState()))) // Doc: "returns false if already present"
+            if (_seenStates.add(new ArrayList<>(inputGraphCopy.getState()))) // Doc: "returns false if already present"
             {
                 // Chase DFS:
                 FindUniqueTraces(inputGraphCopy, currentTraceCopy);
