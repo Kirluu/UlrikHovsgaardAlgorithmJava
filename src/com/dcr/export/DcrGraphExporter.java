@@ -48,7 +48,7 @@ public class DcrGraphExporter {
 
         xml += "<specification>\n<resources>\n<events>\n"; // Begin events
         // Event definitions
-        for (Activity activity : graph.getActivities())
+        for (Activity activity : graph.getActivitiesSortedById())
         {
             xml += ExportActivityToXml(activity);
         }
@@ -61,7 +61,7 @@ public class DcrGraphExporter {
 
         // Labels
         xml += "<labels>\n";
-        for (Activity activity : graph.getActivities())
+        for (Activity activity : graph.getActivitiesSortedById())
         {
             xml += ExportActivityLabelsToXml(activity);
         }
@@ -69,7 +69,7 @@ public class DcrGraphExporter {
 
         // Label mappings
         xml += "<labelMappings>\n";
-        for (Activity activity : graph.getActivities())
+        for (Activity activity : graph.getActivitiesSortedById())
         {
             xml += ExportActivityLabelMappingsToXml(activity);
         }
@@ -97,7 +97,7 @@ public class DcrGraphExporter {
         xml += "<constraints>\n";
         // Conditions
         xml += "<conditions>\n";
-        for (Map.Entry<Activity, HashMap<Activity, Confidence>> condition : graph.getConditions().entrySet())
+        for (Map.Entry<Activity, HashMap<Activity, Confidence>> condition : graph.getConditions().entrySet()) // TODO: To ensure proper XML-comparison, need to sort iteration of relations
         {
             for (Activity target : DcrGraph.FilterHashMapByThreshold(condition.getValue()))
             {

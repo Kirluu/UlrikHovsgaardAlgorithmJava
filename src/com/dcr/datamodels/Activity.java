@@ -47,7 +47,7 @@ public class Activity {
         return _pendingConfidence.get() <= Threshold.getValue();
     }
     public void setPending(boolean value) {
-        _pendingConfidence = value ? new Confidence(1, 1) : new Confidence();
+        _pendingConfidence = value ? new Confidence() : new Confidence(1, 1);
     }
     public boolean IncrementPendingInvocation()
     {
@@ -80,10 +80,14 @@ public class Activity {
     }
 
     public Activity(Activity copyFrom) {
+        _id = copyFrom.getId();
+        _name = copyFrom.getName();
         _roles = copyFrom.getRoles();
-        _includedConfidence = new Confidence(copyFrom.getIncludedConfidence());
-        _pendingConfidence = new Confidence(copyFrom.getPendingConfidence());
-        _executed = copyFrom.isExecuted();
+        //_includedConfidence = new Confidence(copyFrom.getIncludedConfidence()); // TODO: This may cause issues when executing copied graphs ? but also not a pure copy if not doing this...
+        //_pendingConfidence = new Confidence(copyFrom.getPendingConfidence());
+        setIncluded(copyFrom.isIncluded());
+        setPending(copyFrom.isPending());
+        setExecuted(copyFrom.isExecuted());
     }
 
     public byte getHashedActivity(boolean canExecute) {

@@ -319,12 +319,12 @@ public class ByteDcrGraph
         return (b & (1 << 1)) <= 0 || (b & 1) <= 0;
     }
 
-    public static List<Byte> StateWithExcludedActivitiesEqual(List<Byte> b)
+    public static List<Byte> StateWithExcludedActivitiesEqual(List<Byte> bytes)
     {
-        List<Byte> retB = new ArrayList<Byte>(b.size());
-        for (int i = 0; i < b.size(); i++)
+        List<Byte> retB = new ArrayList<Byte>(bytes.size());
+        for (Byte b : bytes)
         {
-            retB.set(i, (byte)(IsByteIncluded(b.get(i)) ? b.get(i) : 0));
+            retB.add((byte)(IsByteIncluded(b) ? b : 0));
         }
         return retB;
     }

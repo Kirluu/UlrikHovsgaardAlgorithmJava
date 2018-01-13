@@ -59,7 +59,7 @@ public class ContradictionApproach {
 
     public boolean AddEvent(String id, String instanceId)
     {
-        if (instanceId != _runId)
+        if (!instanceId.equals(_runId))
         { // add the currentRun to dictionary, if not the one we want to work on.
             if(_runId != null)
                 _allRuns.put(_runId, _run);

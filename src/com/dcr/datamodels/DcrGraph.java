@@ -471,11 +471,10 @@ public class DcrGraph {
         else
         {
             List<Byte> lst = new ArrayList<Byte>(graph.getActivities().size());
-            int i = 0;
             HashSet<Activity> runnableActivities = graph.GetRunnableActivities();
             for (Activity act : graph.getActivitiesSortedById())
             {
-                lst.set(i++, act.getHashedActivity(runnableActivities.contains(act)));
+                lst.add(act.getHashedActivity(runnableActivities.contains(act)));
             }
             return lst;
         }
@@ -527,6 +526,14 @@ public class DcrGraph {
             result.add(new Activity(activity));
         }
         return result;
+    }
+
+    public String GetRelationCountsEtcString() {
+        return String.format(
+                "Inclusions: %d, Exclusions: %d, Responses: %d, Conditions: %d\n" +
+                "Activities: %d",
+                getIncludesCount(), getExcludesCount(), getResponsesCount(), getConditionsCount(),
+                getActivities().size());
     }
 
     /*public HashSet<Activity> GetIncludeOrExcludeRelation(Activity source, boolean incl)
