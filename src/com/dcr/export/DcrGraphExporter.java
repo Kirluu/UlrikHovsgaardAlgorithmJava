@@ -5,9 +5,8 @@ import com.dcr.datamodels.DcrGraph;
 import com.dcr.statistics.Confidence;
 import com.dcr.statistics.Threshold;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class DcrGraphExporter {
 
@@ -44,6 +43,12 @@ public class DcrGraphExporter {
     // Flat XML-export (no fancy nesting)
     public static String ExportToXml(DcrGraph graph)
     {
+        Comparator<Activity> comparator = new Comparator<Activity>() {
+            public int compare(Activity o1, Activity o2) {
+                return o1.getId().compareTo(o2.getId());
+            }
+        };
+
         String xml = "<dcrgraph>\n";
 
         xml += "<specification>\n<resources>\n<events>\n"; // Begin events
@@ -97,35 +102,51 @@ public class DcrGraphExporter {
         xml += "<constraints>\n";
         // Conditions
         xml += "<conditions>\n";
-        for (Map.Entry<Activity, HashMap<Activity, Confidence>> condition : graph.getConditions().entrySet()) // TODO: To ensure proper XML-comparison, need to sort iteration of relations
+        SortedSet<Activity> conditionKeys = new TreeSet<>(comparator);
+        conditionKeys.addAll(graph.getConditions().keySet());
+        for (Activity source : conditionKeys) // To ensure proper XML-comparison, need to sort iteration of relations
         {
-            for (Activity target : DcrGraph.FilterHashMapByThreshold(condition.getValue()))
+            HashMap<Activity, Confidence> targets = graph.getConditions().get(source);
+            SortedSet<Activity> targetsSorted = new TreeSet<>(comparator);
+            targetsSorted.addAll(DcrGraph.FilterHashMapByThreshold(targets));
+            for (Activity target : targetsSorted)
             {
-                xml += String.format("<condition sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\"  />\n", condition.getKey().getId(), target.getId());
+                xml += String.format("<condition sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\"  />\n", source.getId(), target.getId());
             }
         }
         xml += "</conditions>\n";
 
         // Responses
         xml += "<responses>\n";
-        for (Map.Entry<Activity, HashMap<Activity, Confidence>> response : graph.getResponses().entrySet())
+        SortedSet<Activity> responseKeys = new TreeSet<>(comparator);
+        responseKeys.addAll(graph.getResponses().keySet());
+        for (Activity source : responseKeys)
         {
-            for (Activity target : DcrGraph.FilterHashMapByThreshold(response.getValue()))
+            HashMap<Activity, Confidence> targets = graph.getResponses().get(source);
+            SortedSet<Activity> targetsSorted = new TreeSet<>(comparator);
+            targetsSorted.addAll(DcrGraph.FilterHashMapByThreshold(targets));
+            for (Activity target : targetsSorted)
             {
-                xml += String.format("<response sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\" />\n", response.getKey().getId(), target.getId());
+                xml += String.format("<response sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\" />\n", source.getId(), target.getId());
             }
         }
         xml += "</responses>\n";
 
         // Excludes
         xml += "<excludes>\n";
-        for (Map.Entry<Activity, HashMap<Activity, Confidence>> exclusion : graph.getIncludeExcludes().entrySet())
+        SortedSet<Activity> inclExclKeys = new TreeSet<>(comparator);
+        inclExclKeys.addAll(graph.getIncludeExcludes().keySet());
+        for (Activity source : inclExclKeys)
         {
-            for (Map.Entry<Activity, Confidence> target : exclusion.getValue().entrySet())
+            HashMap<Activity, Confidence> targets = graph.getIncludeExcludes().get(source);
+            SortedSet<Activity> targetsSorted = new TreeSet<>(comparator);
+            targetsSorted.addAll(targets.keySet());
+            for (Activity target : targetsSorted)
             {
-                if (target.getValue().get() <= Threshold.getValue()) // If it is an exclusion
+                Confidence conf = targets.get(target);
+                if (conf.get() <= Threshold.getValue()) // If it is an exclusion
                 {
-                    xml += String.format("<exclude sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\" />\n", exclusion.getKey().getId(), target.getKey().getId());
+                    xml += String.format("<exclude sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\" />\n", source.getId(), target.getId());
                 }
             }
         }
@@ -133,13 +154,17 @@ public class DcrGraphExporter {
 
         // Includes
         xml += "<includes>\n";
-        for (Map.Entry<Activity, HashMap<Activity, Confidence>> inclusion : graph.getIncludeExcludes().entrySet())
+        for (Activity source : inclExclKeys)
         {
-            for (Map.Entry<Activity, Confidence> target : inclusion.getValue().entrySet())
+            HashMap<Activity, Confidence> targets = graph.getIncludeExcludes().get(source);
+            SortedSet<Activity> targetsSorted = new TreeSet<>(comparator);
+            targetsSorted.addAll(targets.keySet());
+            for (Activity target : targetsSorted)
             {
-                if (target.getValue().get() > Threshold.getValue() && !inclusion.getKey().equals(target.getKey())) // If it is an inclusion and source != target (avoid self-inclusion)
+                Confidence conf = targets.get(target);
+                if (conf.get() > Threshold.getValue()) // If it is an inclusion
                 {
-                    xml += String.format("<include sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\" />\n", inclusion.getKey().getId(), target.getKey().getId());
+                    xml += String.format("<include sourceId=\"%s\" targetId=\"%s\" filterLevel=\"1\"  description=\"\"  time=\"\"  groups=\"\" />\n", source.getId(), target.getId());
                 }
             }
         }
@@ -160,7 +185,7 @@ public class DcrGraphExporter {
                 "<globalStore></globalStore>\n";
         // Executed events
         xml += "<executed>\n";
-        for (Activity activity : graph.getActivities())
+        for (Activity activity : graph.getActivitiesSortedById())
         {
             if (activity.isExecuted())
             {
@@ -170,7 +195,7 @@ public class DcrGraphExporter {
         xml += "</executed>\n";
         // Incuded events
         xml += "<included>\n";
-        for (Activity activity : graph.getActivities())
+        for (Activity activity : graph.getActivitiesSortedById())
         {
             if (activity.isIncluded())
             {
@@ -180,7 +205,7 @@ public class DcrGraphExporter {
         xml += "</included>\n";
         // Pending events
         xml += "<pendingResponses>\n";
-        for (Activity activity : graph.getActivities())
+        for (Activity activity : graph.getActivitiesSortedById())
         {
             if (activity.isPending())
             {
