@@ -8,7 +8,7 @@
   <component name="ChangeListManager">
     <list default="true" id="63a3dfe5-b55a-40d4-b1ee-99b1206c6932" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/src/com/dcr/export/DcrGraphExporter.java" afterPath="$PROJECT_DIR$/src/com/dcr/export/DcrGraphExporter.java" />
+      <change beforePath="$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java" afterPath="$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -23,8 +23,8 @@
       <file leaf-file-name="FrontEnd.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/com/dcr/main/FrontEnd.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="408">
-              <caret line="36" column="38" lean-forward="true" selection-start-line="36" selection-start-column="38" selection-end-line="36" selection-end-column="38" />
+            <state relative-caret-position="578">
+              <caret line="34" column="45" lean-forward="true" selection-start-line="34" selection-start-column="45" selection-end-line="34" selection-end-column="45" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#5887#5888#0" expanded="true" />
@@ -49,8 +49,8 @@
       <file leaf-file-name="DcrGraphExporter.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/dcr/export/DcrGraphExporter.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="339">
-              <caret line="51" column="36" lean-forward="true" selection-start-line="51" selection-start-column="36" selection-end-line="51" selection-end-column="36" />
+            <state relative-caret-position="731">
+              <caret line="51" column="36" lean-forward="false" selection-start-line="51" selection-start-column="36" selection-end-line="51" selection-end-column="36" />
               <folding>
                 <element signature="e#1610#1611#0" expanded="true" />
                 <element signature="e#1681#1682#0" expanded="true" />
@@ -62,7 +62,7 @@
       <file leaf-file-name="DcrGraph.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/dcr/datamodels/DcrGraph.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="332">
+            <state relative-caret-position="306">
               <caret line="25" column="80" lean-forward="false" selection-start-line="25" selection-start-column="80" selection-end-line="25" selection-end-column="80" />
               <folding>
                 <element signature="imports" expanded="true" />
@@ -89,14 +89,14 @@
       <file leaf-file-name="UniqueTraceFinder.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1751">
-              <caret line="116" column="29" lean-forward="false" selection-start-line="116" selection-start-column="29" selection-end-line="116" selection-end-column="29" />
+            <state relative-caret-position="255">
+              <caret line="135" column="96" lean-forward="true" selection-start-line="135" selection-start-column="96" selection-end-line="135" selection-end-column="96" />
               <folding>
                 <element signature="imports" expanded="true" />
-                <element signature="e#1001#1002#0" expanded="true" />
-                <element signature="e#1046#1047#0" expanded="true" />
-                <element signature="e#1235#1236#0" expanded="true" />
-                <element signature="e#1284#1285#0" expanded="true" />
+                <element signature="e#984#985#0" expanded="true" />
+                <element signature="e#1029#1030#0" expanded="true" />
+                <element signature="e#1218#1219#0" expanded="true" />
+                <element signature="e#1267#1268#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -267,7 +267,6 @@
         <option value="$PROJECT_DIR$/src/com/dcr/datamodels/Relation.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/datamodels/RelationType.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/redundancyremoval/RedundancyRemover.java" />
-        <option value="$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/datamodels/RelationCouple.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/qualitydimensions/QualityDimensionsRetriever.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/utils/Utility.java" />
@@ -276,6 +275,7 @@
         <option value="$PROJECT_DIR$/src/com/dcr/datamodels/DcrGraph.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/processmining/ContradictionApproach.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/export/DcrGraphExporter.java" />
+        <option value="$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java" />
         <option value="$PROJECT_DIR$/src/com/dcr/main/FrontEnd.java" />
       </list>
     </option>
@@ -310,6 +310,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -401,7 +402,6 @@
         </subPane>
       </pane>
       <pane id="PackagesPane" />
-      <pane id="Scope" />
       <pane id="Scratches" />
       <pane id="AndroidView" />
     </panes>
@@ -949,9 +949,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1105">
           <caret line="72" column="29" lean-forward="false" selection-start-line="72" selection-start-column="29" selection-end-line="72" selection-end-column="29" />
-          <folding>
-            <element signature="imports" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -998,20 +995,6 @@
         <state relative-caret-position="323">
           <caret line="19" column="48" lean-forward="false" selection-start-line="19" selection-start-column="48" selection-end-line="19" selection-end-column="48" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1751">
-          <caret line="116" column="29" lean-forward="false" selection-start-line="116" selection-start-column="29" selection-end-line="116" selection-end-column="29" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#1001#1002#0" expanded="true" />
-            <element signature="e#1046#1047#0" expanded="true" />
-            <element signature="e#1235#1236#0" expanded="true" />
-            <element signature="e#1284#1285#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1109,7 +1092,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/dcr/datamodels/DcrGraph.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="332">
+        <state relative-caret-position="306">
           <caret line="25" column="80" lean-forward="false" selection-start-line="25" selection-start-column="80" selection-end-line="25" selection-end-column="80" />
           <folding>
             <element signature="imports" expanded="true" />
@@ -1124,8 +1107,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/com/dcr/export/DcrGraphExporter.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="339">
-          <caret line="51" column="36" lean-forward="true" selection-start-line="51" selection-start-column="36" selection-end-line="51" selection-end-column="36" />
+        <state relative-caret-position="731">
+          <caret line="51" column="36" lean-forward="false" selection-start-line="51" selection-start-column="36" selection-end-line="51" selection-end-column="36" />
           <folding>
             <element signature="e#1610#1611#0" expanded="true" />
             <element signature="e#1681#1682#0" expanded="true" />
@@ -1133,10 +1116,24 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/com/dcr/traversal/UniqueTraceFinder.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="135" column="96" lean-forward="true" selection-start-line="135" selection-start-column="96" selection-end-line="135" selection-end-column="96" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#984#985#0" expanded="true" />
+            <element signature="e#1029#1030#0" expanded="true" />
+            <element signature="e#1218#1219#0" expanded="true" />
+            <element signature="e#1267#1268#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/com/dcr/main/FrontEnd.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="408">
-          <caret line="36" column="38" lean-forward="true" selection-start-line="36" selection-start-column="38" selection-end-line="36" selection-end-column="38" />
+        <state relative-caret-position="578">
+          <caret line="34" column="45" lean-forward="true" selection-start-line="34" selection-start-column="45" selection-end-line="34" selection-end-column="45" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#5887#5888#0" expanded="true" />
